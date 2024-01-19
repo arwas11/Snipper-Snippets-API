@@ -52,7 +52,7 @@ userRouter.get("/", (req, res, next) => {
 userRouter.get("/login", basicAuth, async (req, res, next) => {
   try {
     //get user info from db
-    const foundUser = users.find((user) => user.email === req.user.email);
+    const foundUser = await users.find((user) => user.email === req.user.email);
     // console.log(foundUser)
 
     if (!foundUser) {
