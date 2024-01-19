@@ -1,18 +1,22 @@
 require("dotenv").config();
 const userRouter = require("express").Router();
+const jwt = require("jsonwebtoken");
 const users = require("../db/usersData.json");
+// const {User} = require("../models")
 const basicAuth = require("../middleware/basicAuth");
 const bcrypt = require("bcrypt");
+const userAuth = require("../middleware/userAuth");
+const JWT_SECRET = process.env.JWT_SECRET;
 
 let ids = users.length;
 
 //POST register a new user
 // As a user, I want to make an account with my email and password, so that I can have an identity on Snippr.io
-userRouter.post("/", basicAuth, async (req, res, next) => {
+userRouter.post("/register", basicAuth, async (req, res, next) => {
   try {
     // get the user data, thanks to basicAuth middleware!
     const { email, password } = req.user;
-
+    console.log("checking valid credentials");
     //send error if no entries
     if (!email || !password) {
       res
@@ -20,9 +24,13 @@ userRouter.post("/", basicAuth, async (req, res, next) => {
         .json({ error: "Please enter a valid email and password" });
     }
 
+    console.log("valid credentials");
+    console.log("log all users before creating a new one", users);
+
     // hash the password
     const saltRounds = 11;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
+    console.log("hashing password");
 
     const newUser = {
       id: ++ids,
@@ -30,17 +38,28 @@ userRouter.post("/", basicAuth, async (req, res, next) => {
       password: hashedPassword,
     };
 
+    // console.log("----------",newUser);
+
+    // NO NEED FOR TOKEN WHEN REGISTERING
+    // console.log("creating token");
+    // const token = jwt.sign(
+    //   { id: newUser.id, email: newUser.email },
+    //   JWT_SECRET
+    // );
+
+    // console.log("this created token",token);
     users.push(newUser);
-    console.log(users);
     res.status(201).send(`New account was created!
-    email: ${newUser.email}, id: ${newUser.id}`);
+    id: ${newUser.id}, email: ${newUser.email}
+    `);
+    // TOKEN= ${token}
   } catch (error) {
     next(error);
   }
 });
 
 //FOR TESTING: GET all users
-userRouter.get("/", (req, res, next) => {
+userRouter.get("/", async (req, res, next) => {
   try {
     res.json(users);
   } catch (error) {
@@ -67,11 +86,21 @@ userRouter.get("/login", basicAuth, async (req, res, next) => {
 
     if (!comparePassword) {
       return res.status(401).json({ error: "Incorrect password" });
-    }
-    // don't send back the hashed password
-    // res.json({ id: foundUser.id, email: foundUser.email });
+    } else {
+      // USER STORY: The user provides their email and password to authenticate and receives a token in exchange
+      //make a payload
+      const payload = { id: foundUser.id, email: foundUser.email };
 
-    res.status(202).send(`welcome back, ${foundUser.email}!`);
+      // sign and encode the payload to create the token
+      const accessToken = jwt.sign(payload, JWT_SECRET);
+
+      // don't send back the hashed password
+      // res.json({ id: foundUser.id, email: foundUser.email });
+
+      // res.json({accessToken})
+      res.status(202).send(`welcome back, ${foundUser.email}!
+      TOKEN: ${accessToken}`);
+    }
   } catch (error) {
     next(error);
   }

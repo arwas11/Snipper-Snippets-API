@@ -1,4 +1,4 @@
-require('dotenv').config();
+require("dotenv").config();
 const { db } = require("./db/db");
 const app = require("./app");
 
@@ -6,12 +6,12 @@ const PORT = process.env.PORT || 3000;
 
 const init = async () => {
   try {
-    await db.sync();
+    // await db.sync();
     app.listen(PORT, () => {
       console.log(`Server listening at http://localhost:${PORT}`);
     });
   } catch (error) {
-    console.error('Error starting server:', error)
+    console.error("Error starting server:", error);
   }
 };
 

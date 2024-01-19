@@ -4,6 +4,7 @@
  */
 function basicAuth(req, res, next) {
   try {
+    console.log("basic auth running");
     const authHeader = req.headers.authorization; //This specifically accesses the value of the Authorization header, which is commonly used to transmit credentials for authentication purposes.
 
     if (!authHeader || !authHeader.startsWith("Basic ")) {
@@ -31,6 +32,8 @@ function basicAuth(req, res, next) {
     }
 
     req.user = { email, password };
+    console.log("basic auth done");
+
     next();
   } catch (error) {
     next(error);

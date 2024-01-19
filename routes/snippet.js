@@ -1,12 +1,14 @@
 const snippetRouter = require("express").Router();
 const snippets = require("../db/seedData.json");
+// const {Snippet} = require("../models")
 const { encrypt, decrypt } = require("../utils/encrypt");
-
-let ids = snippets.length;
+const userAuth = require("../middleware/userAuth");
+const JWT_SECRET = process.env.JWT_SECRET;
+// let ids = snippets.length;
 
 //GET all snippets
 // As a user, I want the snippet to be decrypted before it is returned from the API, so that I can actually read it
-snippetRouter.get("/", (req, res, next) => {
+snippetRouter.get("/", userAuth, async (req, res, next) => {
   try {
     const { lang } = req.query;
 
@@ -37,10 +39,9 @@ snippetRouter.get("/", (req, res, next) => {
   }
 });
 
-
 //GET a snippet by id
 // As a user, I want the snippet to be decrypted before it is returned from the API, so that I can actually read it
-snippetRouter.get("/:id", (req, res, next) => {
+snippetRouter.get("/:id", userAuth, async (req, res, next) => {
   try {
     const snippetId = parseInt(req.params.id);
     const snippet = snippets.find((snippet) => snippet.id === snippetId);
@@ -49,7 +50,7 @@ snippetRouter.get("/:id", (req, res, next) => {
       return res.status(404).json({ error: "Snippet not found" });
     }
     //uncomment to show snippet.code in plaintext
-    snippet.code = decrypt(snippet.code)
+    snippet.code = decrypt(snippet.code);
     res.json(snippet);
   } catch (error) {
     next(error);
@@ -58,7 +59,7 @@ snippetRouter.get("/:id", (req, res, next) => {
 
 //POST create new snippet
 // As a user, I want all snippets to be encrypted before being saved into the database, so that I feel confident my code can’t be stolen if the database is compromised
-snippetRouter.post("/", (req, res, next) => {
+snippetRouter.post("/", userAuth, async (req, res, next) => {
   try {
     const { language, code } = req.body;
     if (!language || !code) {
@@ -78,7 +79,11 @@ snippetRouter.post("/", (req, res, next) => {
     //to show entire newSnippt that was added to db
     // res.status(201).json(newSnippet);
 
-    res.status(201).send(`You added a new ${newSnippet.language} snippet with id#${newSnippet.id}!`)
+    res
+      .status(201)
+      .send(
+        `You added a new ${newSnippet.language} snippet with id#${newSnippet.id}!`
+      );
   } catch (error) {
     next(error);
   }
