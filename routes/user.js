@@ -16,7 +16,7 @@ userRouter.post("/register", basicAuth, async (req, res, next) => {
   try {
     // get the user data, thanks to basicAuth middleware!
     const { email, password } = req.user;
-    console.log("checking valid credentials");
+    // console.log("checking valid credentials");
     //send error if no entries
     if (!email || !password) {
       res
@@ -24,13 +24,13 @@ userRouter.post("/register", basicAuth, async (req, res, next) => {
         .json({ error: "Please enter a valid email and password" });
     }
 
-    console.log("valid credentials");
-    console.log("log all users before creating a new one", users);
+    // console.log("valid credentials");
+    // console.log("log all users before creating a new one", users);
 
     // hash the password
     const saltRounds = 11;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
-    console.log("hashing password");
+    // console.log("hashing password");
 
     const newUser = {
       id: ++ids,
@@ -92,7 +92,7 @@ userRouter.get("/login", basicAuth, async (req, res, next) => {
       const payload = { id: foundUser.id, email: foundUser.email };
 
       // sign and encode the payload to create the token
-      const accessToken = jwt.sign(payload, JWT_SECRET);
+      const accessToken = jwt.sign(payload, JWT_SECRET, {expiresIn: "24h"});
 
       // don't send back the hashed password
       // res.json({ id: foundUser.id, email: foundUser.email });
