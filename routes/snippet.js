@@ -1,14 +1,15 @@
 const snippetRouter = require("express").Router();
+const { encrypt, decrypt } = require("../utils/encrypt");
+const { requiresAuth } = require("express-openid-connect");
+
 const snippets = require("../db/seedData.json");
 // const {Snippet} = require("../models")
-const { encrypt, decrypt } = require("../utils/encrypt");
-const userAuth = require("../middleware/userAuth");
-const JWT_SECRET = process.env.JWT_SECRET;
-// let ids = snippets.length;
+
+let ids = snippets.length;
 
 //GET all snippets
 // As a user, I want the snippet to be decrypted before it is returned from the API, so that I can actually read it
-snippetRouter.get("/", userAuth, async (req, res, next) => {
+snippetRouter.get("/", requiresAuth(), async (req, res, next) => {
   try {
     const { lang } = req.query;
 
@@ -18,21 +19,23 @@ snippetRouter.get("/", userAuth, async (req, res, next) => {
     }));
 
     if (lang) {
-      if (!snippets.find((snippet) => snippet.language === lang)) {
+      const findSnippet = snippets.find((snippet) => snippet.language === lang);
+      if (!findSnippet) {
         res.status(400).send("Please enter a valid language");
       } else {
         // console.log(req.query[0]);
         const foundSnippets = decodedSnippets.filter(
           (snippet) => snippet.language.toLowerCase() === lang.toLowerCase()
         );
-        console.log(foundSnippets);
+        // console.log(foundSnippets);
         res.status(200).json(foundSnippets);
       }
     }
-    //this will show decrypted data
-    res.json(decodedSnippets);
 
-    //this will show encrypted data
+    //return all decoded snippets
+    res.send(decodedSnippets);
+
+    //this will show encrypted snippets
     // res.json(snippets);
   } catch (error) {
     next(error);
@@ -41,7 +44,7 @@ snippetRouter.get("/", userAuth, async (req, res, next) => {
 
 //GET a snippet by id
 // As a user, I want the snippet to be decrypted before it is returned from the API, so that I can actually read it
-snippetRouter.get("/:id", userAuth, async (req, res, next) => {
+snippetRouter.get("/:id", requiresAuth(), async (req, res, next) => {
   try {
     const snippetId = parseInt(req.params.id);
     const snippet = snippets.find((snippet) => snippet.id === snippetId);
@@ -49,7 +52,8 @@ snippetRouter.get("/:id", userAuth, async (req, res, next) => {
     if (!snippet) {
       return res.status(404).json({ error: "Snippet not found" });
     }
-    //uncomment to show snippet.code in plaintext
+
+    //comment out to show encrypted snippet.code
     snippet.code = decrypt(snippet.code);
     res.json(snippet);
   } catch (error) {
@@ -59,9 +63,11 @@ snippetRouter.get("/:id", userAuth, async (req, res, next) => {
 
 //POST create new snippet
 // As a user, I want all snippets to be encrypted before being saved into the database, so that I feel confident my code can’t be stolen if the database is compromised
-snippetRouter.post("/", userAuth, async (req, res, next) => {
+snippetRouter.post("/", requiresAuth(), async (req, res, next) => {
   try {
     const { language, code } = req.body;
+
+    //basic validation
     if (!language || !code) {
       return res
         .status(400)
@@ -72,6 +78,7 @@ snippetRouter.post("/", userAuth, async (req, res, next) => {
       id: ++ids,
       language,
       code,
+      // ownerId,
     };
 
     snippets.push({ ...newSnippet, code: encrypt(code) });
