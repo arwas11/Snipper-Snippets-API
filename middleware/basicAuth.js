@@ -12,9 +12,12 @@ function basicAuth(req, res, next) {
         error: "Unauthorized: Please enter a valid email and password",
       });
     }
+    console.log('this is authHeader', authHeader);
+
 
     //this line isolates the base64-encoded credentials from the Authorization header and stores them in the encodedCredentials variable for subsequent decoding and credential extraction.
     const encodedCredentials = authHeader.split(" ")[1];
+    console.log('this is encodedCreds', encodedCredentials);
 
     //this creates a Buffer object, which represents a raw binary data sequence in Node.js. It takes two arguments:
     //1-encodedCredentials: The base64-encoded string containing the credentials.
@@ -26,6 +29,8 @@ function basicAuth(req, res, next) {
 
     //the result of the above will be in this format "email@wew:password123"
     const [email, password] = decodedCredentials.split(":");
+    console.log('this is decodedcreds', decodedCredentials);
+    console.log('this is creds', email, password);
 
     if (!email || !password) {
       return res.status(400).json({ error: "Email and password are required" });
